@@ -1,0 +1,427 @@
+# ---
+#   title: "Classification Summative Assignment Z-code:Z0182021"
+# output: html_document
+# date: "2023-03-10"
+# ---
+#   Load the data into R:
+#   ```{r}
+# Load necessary libraries
+#install.packages("readr")
+#install.packages("dplyr")
+#install.packages("ggplot2")
+#install.packages("caTools")
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(caTools)
+data <- read_csv("https://www.louisaslett.com/Courses/MISCADA/bank_personal_loan.csv")
+View(data)
+# ```
+# The information about the data set:
+#   ```{r}
+#install.packages('skimr')
+library("skimr")
+skim(data)
+# ```
+# Description of the data:
+#   ```{r}
+cat("The dataset contains information about bank customers and whether they accepted a personal loan offer (Personal.Loan). The objective of the analysis is to predict whether a customer can be 'upsold' to a personal banking loan based on their attributes. There are 13 variables in the dataset:\n\n")
+
+cat("1. Personal.Loan: customer accepted a personal loan offered (1=Yes, 0=No)\n")
+cat("2. Age: customer age\n")
+cat("3. Experience: professional experience (years)\n")
+cat("4. Income: annual income ($000)\n")
+cat("5. Zip code: zip code for home address\n")
+cat("6. Family: size of family\n")
+cat("7. CCAvg: average credit cards spending per month ($000)\n")
+cat("8. Education: most recent educational achievement level (1) undergraduate, (2) graduate, (3) advanced/professional\n")
+cat("9. Mortgage: value of mortgage on home ($000)\n")
+cat("10. Securities: do they have a securities account with this bank? (1=Yes, 0=No)\n")
+cat("11. CDAccount: do they have a certificate of deposit with this bank? (1=Yes, 0=No)\n")
+cat("12. Online: do they use Internet banking (1=Yes, 0=No)\n")
+cat("13. CreditCard: do they use a credit card from this bank? (1=Yes, 0=No)\n")
+# ```
+# Initial data summary:
+#   ```{r}
+summary(data)
+cat("\nNumber of missing values in each variable:\n")
+colSums(is.na(data))
+# ```
+# The initial data summary provides some useful insights into the dataset:
+#   
+#   Age: The age of customers ranges from 23 to 67 years, with an average age of 45.34 years.
+# Experience: Professional experience ranges from -3 to 43 years, with an average of 20.1 years. The minimum experience value of -3 seems to be an error and might need to be corrected or removed.
+# Income: Annual income ranges from $8,000 to $224,000, with an average income of $73,770.
+# ZIP.Code: The ZIP codes range from 9307 to 96651. This variable might not be very useful for the analysis and could potentially be dropped.
+# Family: Family size ranges from 1 to 4 members, with an average of 2.4 members.
+# CCAvg: The average monthly credit card spending ranges from $0 to $10,000, with an average of $1,938.
+# Education: The majority of customers have an undergraduate education level (1), followed by advanced/professional (3), and then graduate (2).
+# Mortgage: Mortgage value ranges from $0 to $635,000, with an average value of $56,500. Many customers have no mortgage (median value is 0).
+# Personal.Loan: Only 9.6% of customers accepted the personal loan offer.
+# Securities.Account: Only 10.44% of customers have a securities account with the bank.
+# CD.Account: Only 6.04% of customers have a certificate of deposit account with the bank.
+# Online: 59.68% of customers use internet banking.
+# CreditCard: 29.4% of customers use a credit card from the bank.
+# There are no missing values in the dataset, so no imputation or removal of missing values is needed. However, the dataset might need some cleaning, such as correcting the negative experience values.
+# 
+# ```{r}
+DataExplorer::plot_bar(data, ncol = 3)
+# ```
+# ```{r}
+DataExplorer::plot_histogram(data, ncol = 3)
+# ```
+# ```{r}
+DataExplorer::plot_boxplot(data, by = "Personal.Loan", ncol = 3)
+# ```
+# Simple visualizations of the data:
+#   ```{r}
+library(ggplot2)
+continuous_vars <- c("Age", "Experience", "Income", "CCAvg", "Mortgage")
+for (var in continuous_vars) {
+  p <- ggplot(data, aes_string(var)) + geom_histogram(bins = 30) + labs(title = paste("Histogram of", var), x = var)
+  print(p)
+}
+categorical_vars <- c("Education", "Securities.Account", "CD.Account", "Online", "CreditCard", "Personal.Loan")
+for (var in categorical_vars) {
+  p <- ggplot(data, aes_string(var)) + geom_bar() + labs(title = paste("Bar Plot of", var), x = var)
+  print(p)
+}
+# Box plots for continuous variables vs target variable (Personal.Loan)
+for (var in continuous_vars) {
+  p <- ggplot(data, aes_string("Personal.Loan", var)) + geom_boxplot() + labs(title = paste("Box Plot of", var, "by Personal.Loan"), x = "Personal.Loan", y = var)
+  print(p)
+}
+# ```
+# ```{r}
+library(ggplot2)
+library(gridExtra)
+plots <- list()
+for (var in categorical_vars) {
+  p <- ggplot(data, aes_string(var)) + geom_bar() + labs(title = paste("Bar Plot of", var), x = var) + theme(plot.title = element_text(size = 8))
+  plots[[var]] <- p
+}
+# Create a 3x2 grid layout for the plots
+grid.arrange(grobs = plots, ncol = 3)
+# ```
+# ```{r}
+# # # Save the grid of plots as an image
+# # g <- arrangeGrob(grobs = plots, ncol = 3)
+# # ggsave("grid_plots.png", g, width = 10, height = 5, dpi = 300)
+# ```
+
+
+# ```{r}
+library(ggplot2)
+library(gridExtra)
+
+continuous_vars <- c("Age", "Experience", "Income", "Family", "CCAvg", "Mortgage")
+
+plots <- list()
+for (var in continuous_vars) {
+  p <- ggplot(data, aes_string(var)) + geom_histogram(bins = 30) + labs(title = paste("Histogram of", var), x = var) + theme(plot.title = element_text(size = 8))
+  plots[[var]] <- p
+}
+
+categorical_vars <- c("Education", "Personal.Loan")
+for (var in categorical_vars) {
+  p <- ggplot(data, aes_string(var, "Income")) + geom_boxplot() + labs(title = paste("Box Plot of Income by", var), x = var) + theme(plot.title = element_text(size = 8))
+  plots[[var]] <- p
+}
+grid.arrange(grobs = plots, ncol = 3)
+# ```
+# ```{r}
+library(ggplot2)
+library(gridExtra)
+
+continuous_vars <- c("Age", "Experience", "Income", "Family", "CCAvg", "Mortgage")
+plots <- list()
+for (var in continuous_vars) {
+  p <- ggplot(data, aes_string(var)) + geom_histogram(bins = 30) + labs(title = paste("Histogram of", var), x = var) + theme(plot.title = element_text(size = 8))
+  plots[[var]] <- p
+}
+categorical_vars <- c("Education", "Securities.Account", "CD.Account", "Online", "CreditCard", "Personal.Loan")
+for (var in categorical_vars) {
+  p <- ggplot(data, aes_string(var)) + geom_bar() + labs(title = paste("Bar Plot of", var), x = var) + theme(plot.title = element_text(size = 8))
+  plots[[var]] <- p
+}
+grid.arrange(grobs = plots, ncol = 4)
+# ```
+# ```{r}
+library(ggplot2)
+library(gridExtra)
+continuous_vars <- c("Age", "Experience", "Income", "Family", "CCAvg", "Mortgage")
+plots <- list()
+for (var in continuous_vars) {
+  p <- ggplot(data, aes(x = factor(Personal.Loan), y = as.numeric(data[[var]]))) + geom_boxplot() + labs(title = paste("Box Plot of", var, "by Personal.Loan"), x = "Personal.Loan", y = var) + theme(plot.title = element_text(size = 8))
+  plots[[var]] <- p
+}
+categorical_vars <- c("Education", "Securities.Account", "CD.Account", "Online", "CreditCard")
+for (var in categorical_vars) {
+  p <- ggplot(data, aes_string(var, fill = "factor(Personal.Loan)")) + geom_bar(position = "dodge") + labs(title = paste("Bar Plot of", var, "by Personal.Loan"), x = var) + theme(plot.title = element_text(size = 8), legend.title = element_blank())
+  plots[[var]] <- p
+}
+grid.arrange(grobs = plots, ncol = 4)
+# 
+# ```
+# ```{r}
+summary(data)
+colSums(is.na(data))
+
+# Visualize relationships between variables using ggplot2
+pairs(data)
+# ```
+
+# Model Fitting:
+#   ```{r}
+# logistic regression model
+library(caret)
+library(dplyr)
+library(pROC) # Load pROC library for roc()
+
+# Clean the data
+# Convert negative experience values to positive
+data$Experience <- abs(data$Experience)
+
+# Convert numeric variables to factors
+factor_vars <- c("Personal.Loan", "Securities.Account", "CD.Account", "Online", "CreditCard")
+data[factor_vars] <- lapply(data[factor_vars], as.factor)
+
+# Split the dataset into training (80%) and testing (20%) sets
+set.seed(42)
+train_idx <- createDataPartition(data$Personal.Loan, p = 0.8, list = FALSE)
+train_data <- data[train_idx, ]
+test_data <- data[-train_idx, ]
+
+# Fit a logistic regression model
+logit_model <- glm(Personal.Loan ~ ., family = binomial, data = train_data)
+
+# Model evaluation
+# Predict probabilities on the test set
+predictions_prob <- predict(logit_model, newdata = test_data, type = "response")
+
+# Convert probabilities to binary predictions
+predictions_class <- ifelse(predictions_prob > 0.5, 1, 0)
+
+# Confusion matrix
+cm <- confusionMatrix(factor(predictions_class), test_data$Personal.Loan)
+print(cm)
+
+# ROC curve and AUC
+roc_obj <- roc(test_data$Personal.Loan, predictions_prob)
+plot(roc_obj, main = "ROC Curve")
+cat("AUC:", auc(roc_obj), "\n")
+# ```
+# ```{r}
+# Decision Tree
+# Load necessary libraries
+library(caret)
+library(dplyr)
+library(pROC) # Load pROC library for roc()
+library(rpart) # Load rpart library for decision tree
+
+# Clean the data
+# Convert negative experience values to positive
+data$Experience <- abs(data$Experience)
+
+# Convert numeric variables to factors
+factor_vars <- c("Personal.Loan", "Securities.Account", "CD.Account", "Online", "CreditCard")
+data[factor_vars] <- lapply(data[factor_vars], as.factor)
+
+# Split the dataset into training (80%) and testing (20%) sets
+set.seed(42)
+train_idx <- createDataPartition(data$Personal.Loan, p = 0.8, list = FALSE)
+train_data <- data[train_idx, ]
+test_data <- data[-train_idx, ]
+
+# Fit a decision tree model
+tree_model <- rpart(Personal.Loan ~ ., data = train_data, method = "class")
+
+# Model evaluation
+# Predict probabilities on the test set
+predictions_prob <- predict(tree_model, newdata = test_data, type = "prob")
+
+# Identify the correct label for loans
+loan_label <- colnames(predictions_prob)[colnames(predictions_prob) %in% c("Loan", "1")]
+
+# Convert probabilities to binary predictions
+predictions_class <- ifelse(predictions_prob[, loan_label] > 0.5, "Loan", "No_Loan")
+
+# Confusion matrix
+cm <- confusionMatrix(factor(predictions_class, levels = levels(test_data$Personal.Loan)), test_data$Personal.Loan)
+print(cm)
+
+# ROC curve and AUC
+roc_obj <- roc(as.numeric(test_data$Personal.Loan) - 1, predictions_prob[, loan_label])
+plot(roc_obj, main = "ROC Curve")
+cat("AUC:", auc(roc_obj), "\n")
+
+# Calculate confusion matrix manually
+table_obs_pred <- table(Observed = test_data$Personal.Loan, Predicted = factor(predictions_class, levels = levels(test_data$Personal.Loan)))
+print(table_obs_pred)
+
+# Calculate accuracy
+accuracy <- sum(diag(table_obs_pred)) / sum(table_obs_pred)
+cat("Accuracy:", accuracy, "\n")
+
+# ```
+# ```{r}
+# Load necessary libraries
+library(caret)
+library(dplyr)
+library(pROC) # Load pROC library for roc()
+library(randomForest) # Load randomForest library
+
+# Clean the data
+# Convert negative experience values to positive
+data$Experience <- abs(data$Experience)
+
+# Convert numeric variables to factors
+factor_vars <- c("Personal.Loan", "Securities.Account", "CD.Account", "Online", "CreditCard")
+data[factor_vars] <- lapply(data[factor_vars], as.factor)
+
+# Split the dataset into training (80%) and testing (20%) sets
+set.seed(42)
+train_idx <- createDataPartition(data$Personal.Loan, p = 0.8, list = FALSE)
+train_data <- data[train_idx, ]
+test_data <- data[-train_idx, ]
+
+# Fit a random forest model
+rf_model <- randomForest(Personal.Loan ~ ., data = train_data)
+
+# Model evaluation
+# Predict probabilities on the test set
+predictions_prob <- predict(rf_model, newdata = test_data, type = "prob")
+
+# Convert probabilities to binary predictions
+predictions_class <- ifelse(predictions_prob[, 2] > 0.5, "Loan", "No_Loan")
+
+# Factorize the predictions with the same levels as the test data
+predictions_class <- factor(predictions_class, levels = levels(test_data$Personal.Loan))
+
+# Confusion matrix
+cm <- confusionMatrix(predictions_class, test_data$Personal.Loan)
+print(cm)
+
+# ROC curve and AUC
+roc_obj <- roc(test_data$Personal.Loan, predictions_prob[, 2])
+plot(roc_obj, main = "ROC Curve")
+cat("AUC:", auc(roc_obj), "\n")
+# ```
+# ```{r}
+# Load necessary libraries
+library(caret)
+library(dplyr)
+library(pROC) # Load pROC library for roc()
+library(e1071) # Load e1071 library for SVM
+
+# Clean the data
+# Convert negative experience values to positive
+data$Experience <- abs(data$Experience)
+
+# Convert numeric variables to factors
+factor_vars <- c("Personal.Loan", "Securities.Account", "CD.Account", "Online", "CreditCard")
+data[factor_vars] <- lapply(data[factor_vars], as.factor)
+
+# Split the dataset into training (80%) and testing (20%) sets
+set.seed(42)
+train_idx <- createDataPartition(data$Personal.Loan, p = 0.8, list = FALSE)
+train_data <- data[train_idx, ]
+test_data <- data[-train_idx, ]
+
+# Fit an SVM model
+svm_model <- svm(Personal.Loan ~ ., data = train_data, kernel = "radial", probability = TRUE)
+
+# Model evaluation
+# Predict probabilities on the test set
+predictions_prob <- attr(predict(svm_model, newdata = test_data, probability = TRUE), "probabilities")
+
+# Convert probabilities to binary predictions
+predictions_class <- ifelse(predictions_prob[, 2] > 0.5, "Loan", "No_Loan")
+
+# Factorize the predictions with the same levels as the test data
+predictions_class <- factor(predictions_class, levels = levels(test_data$Personal.Loan))
+
+# Confusion matrix
+cm <- confusionMatrix(predictions_class, test_data$Personal.Loan)
+print(cm)
+
+# ROC curve and AUC
+roc_obj <- roc(test_data$Personal.Loan, predictions_prob[, 2], levels = rev(levels(test_data$Personal.Loan)))
+plot(roc_obj, main = "ROC Curve")
+cat("AUC:", auc(roc_obj), "\n")
+# ```
+# ```{r}
+#install.packages(c("caret", "randomForest", "e1071"))
+library(caret)
+library(randomForest)
+library(e1071)
+# Convert negative experience values to positive
+data$Experience <- abs(data$Experience)
+
+# Convert numeric variables to factors
+factor_vars <- c("Personal.Loan", "Securities.Account", "CD.Account", "Online", "CreditCard")
+data[factor_vars] <- lapply(data[factor_vars], as.factor)
+# Split the dataset into training (80%) and testing (20%) sets
+set.seed(42)
+train_idx <- createDataPartition(data$Personal.Loan, p = 0.8, list = FALSE)
+train_data <- data[train_idx, ]
+test_data <- data[-train_idx, ]
+# Perform recursive feature elimination using Random Forest
+control <- rfeControl(functions = rfFuncs, method = "cv", number = 10)
+features <- rfe(train_data[, -9], train_data$Personal.Loan, sizes = c(1:12), rfeControl = control)
+print(features)
+best_features <- features$optVariables
+# Set up the cross-validation
+control <- trainControl(method = "cv", number = 10, search = "random")
+
+# Set up the parameter grid for tuning
+tuneGrid <- expand.grid(.mtry = seq(from = 1, to = length(best_features), by = 1))
+
+# Train the Random Forest model with hyperparameter tuning
+set.seed(42)
+model <- train(Personal.Loan ~ ., data = train_data[, c(best_features, "Personal.Loan")],
+               method = "rf", trControl = control, tuneGrid = tuneGrid)
+print(model)
+# Predict on the test set
+predictions <- predict(model, newdata = test_data[, best_features])
+
+# Confusion matrix
+cm <- confusionMatrix(predictions, test_data$Personal.Loan)
+print(cm)
+
+# ROC curve and AUC
+predictions_prob <- predict(model, newdata = test_data[, best_features], type = "prob")
+roc_obj <- roc(test_data$Personal.Loan, predictions_prob[, "1"])
+plot(roc_obj, main = "ROC Curve")
+cat("AUC:", auc(roc_obj), "\n")
+# ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
